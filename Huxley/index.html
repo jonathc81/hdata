@@ -1,0 +1,316 @@
+﻿<!DOCTYPE html>
+<!--
+Huxley - a JSON proxy for the UK National Rail Live Departure Board SOAP API
+Copyright (C) 2015 James Singleton
+ * http://huxley.unop.uk
+ * https://github.com/jpsingleton/Huxley
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html>
+<head>
+    <title>Huxley</title>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+</head>
+<body>
+    <div class="container">
+        <div class="jumbotron">
+            <img src="huxley.png" alt="Huxley" class="pull-right" />
+            <h1>Huxley</h1>
+            <h2>A JSON REST proxy for the UK National Rail
+                <br />
+                Live Departure Board <a href="http://harmful.cat-v.org/software/xml/soap/simple">SOAP</a>
+                <a href="http://www.nationalrail.co.uk/46391.aspx">API</a>
+                (<a href="https://lite.realtime.nationalrail.co.uk/OpenLDBWS/">Darwin</a>)
+
+            </h2>
+        </div>
+        <p>
+            Huxley is a CORS enabled JSON REST proxy for the UK National Rail Enquires Live Departure Board SOAP API (Darwin).
+            It is being actively developed so if you want to be informed of updates when they are released then watch the 
+            <a href="https://github.com/jpsingleton/Huxley">project on GitHub</a> and/or <a href="https://twitter.com/shutdownscanner">follow me on Twitter</a>.
+            You can also join the Open Rail Data chat rooms on Slack.
+        </p>
+        <script async defer src="https://openraildata.herokuapp.com/slackin.js?large"></script>
+        <h2>Access Tokens</h2>
+        <p>
+            You will need to add your access token to the URL for this to work. You can register to obtain one <a href="https://realtime.nationalrail.co.uk/OpenLDBWSRegistration/Registration">here</a>.
+        </p>
+        <p>
+            Append the <code>accessToken={Your GUID token}</code> parameter to the query string for every request.
+        </p>
+        <p>
+            There is optional support for configuring the access token server side. So you don't need to worry about revealing it.
+        </p>
+        <p>
+            You can set <code>DarwinAccessToken</code> to your NRE access token. If you leave <code>ClientAccessToken</code> as an empty GUID then no token is required in the Huxley URL.
+            If you set <code>ClientAccessToken</code> to a random GUID and it matches the token in the URL then the <code>DarwinAccessToken</code> will be used instead in the SOAP call.
+            Otherwise the URL token is passed straight through.
+            Look in the <code>Web.config</code> file for more details.
+        </p>
+        <p>
+            <strong>N.B.</strong> You should set up these tokens in your deployment platform and not in your source code repository. You'll notice that the values are blank by default.
+        </p>
+        <h2>API Endpoints</h2>
+        <h3>Station Boards</h3>
+        <h4>URL Format</h4>
+        <p>
+            The URL format is <code>{board}/{CRS|StationName}/{filterType}/{filterCRS|StationName}/{numRows}</code> or <code>{board}/{CRS|StationName}/{numRows}</code> (arrivals/departures only) where only board and CRS (or a station name) are required.
+            The filter type can be either <code>to</code> or <code>from</code> (case is not important).
+        </p>
+        <p>
+            A station name can be used in place of CRS codes if the name matches only one station (or matches one exactly) but case is not important.
+            See the CRS section below for more information.
+        </p>
+        <p>
+            For all boards you can add an <code>expand=true</code> parameter to embed all service details into the board response.
+        </p>
+        <p>
+            <code><a href="/all/crs?expand=true&accessToken=">/all/{CRS|StationName}?accessToken={Your GUID token}&amp;expand=true</a></code>
+        </p>
+        <h5>Examples:</h5>
+        <ul>
+            <li>10 (default value) Arrivals and Departures at Clapham Junction: <code><a href="/all/clj?accessToken=">/all/clj</a></code></li>
+            <li>15 Arrivals and Departures at Clapham Junction: <code><a href="/all/clj/15?accessToken=">/all/clj/15</a></code></li>
+            <li>10 (default value) Departures at Clapham Junction to Waterloo: <code><a href="/departures/clj/to/wat?accessToken=">/departures/clj/to/wat</a></code></li>
+            <li>15 Arrivals at Clapham Junction from Waterloo: <code><a href="/arrivals/clj/from/wat/15?accessToken=">/arrivals/clj/from/wat/15</a></code></li>
+            <li>10 (default value) Arrivals and Departures at Wandsworth Common to Clapham Junction: <code><a href="/all/wandsworth common/to/clapham junction?accessToken=">/all/wandsworth common/to/clapham junction</a></code></li>
+            <li>20 Departures at East Croydon to London Victoria: <code><a href="/departures/east croydon/to/london victoria/20?accessToken=">/departures/east croydon/to/london victoria/20</a></code></li>
+        </ul>
+        <h4>Departures</h4>
+        <p><code><a href="/departures/crs?accessToken=">/departures/{CRS|StationName}?accessToken={Your GUID token}</a></code></p>
+        <h4>Arrivals</h4>
+        <p><code><a href="/arrivals/crs?accessToken=">/arrivals/{CRS|StationName}?accessToken={Your GUID token}</a></code></p>
+        <h4>Departures and Arrivals</h4>
+        <p><code><a href="/all/crs?accessToken=">/all/{CRS|StationName}?accessToken={Your GUID token}</a></code></p>
+        <h4>Next</h4>
+        <p><code><a href="/next/crs/to/edb?accessToken=">/next/{CRS|StationName}/{filterType}/{filterCRSs|StationNames}?accessToken={Your GUID token}</a></code></p>
+        <p>Filter stations can be a comma separated list. Filter type and number of rows are ignored.</p>
+        <h4>Fastest</h4>
+        <p><code><a href="/fastest/crs/to/edb?accessToken=">/fastest/{CRS|StationName}/{filterType}/{filterCRSs|StationNames}?accessToken={Your GUID token}</a></code></p>
+        <p>Filter stations can be a comma separated list. Filter type and number of rows are ignored.</p>
+        <h4>Delays</h4>
+        <p>The <strong>delays</strong> action performs calculations server side to easily let you know if there are problems on a particular route.</p>
+        <p><code><a href="/delays/clapham junction/from/london/20?accessToken=">/delays/{CRS|StationName}/{filterType}/{filterCRS|StationName}/{numRows}?accessToken={Your GUID token}</a></code></p>
+        <strong>Sample Response:</strong>
+        <pre>
+{
+  "generatedAt": "2015-05-08T11:28:33.7187169+01:00",
+  "locationName": "Clapham Junction",
+  "crs": "CLJ",
+  "filterLocationName": "London",
+  "filtercrs": "LON",
+  "delays": true,
+  "totalTrainsDelayed": 1,
+  "totalDelayMinutes": 16,
+  "totalTrains": 12,
+  "delayedTrains": [
+    {
+      "origin": [
+        {
+          "locationName": "London Waterloo",
+          "crs": "WAT",
+          "via": null,
+          "futureChangeTo": null,
+          "assocIsCancelled": false
+        }
+      ],
+      "destination": [
+        {
+          "locationName": "London Waterloo",
+          "crs": "WAT",
+          "via": null,
+          "futureChangeTo": null,
+          "assocIsCancelled": false
+        }
+      ],
+      "currentOrigins": null,
+      "currentDestinations": null,
+      "sta": null,
+      "eta": null,
+      "std": "11:20",
+      "etd": "11:28",
+      "platform": "3",
+      "operator": "South West Trains",
+      "operatorCode": "SW",
+      "isCircularRoute": false,
+      "serviceID": "F4GbTDZuLjb4VlXEYDuakg==",
+      "adhocAlerts": null
+    }
+  ]
+}
+</pre>
+        <p>
+            Additionally, this action will accept <code>LON</code> or <code>London</code> as a filter CRS to find trains going to or coming from any of the <a href="http://www.nationalrail.co.uk/times_fares/ticket_types/46587.aspx#terminals">London Terminals</a>.
+        </p>
+        <p>
+            You can also pass in a comma separated list of 24 hour train times to filter on (e.g. <code>/delays/btn/to/lon/50/0729,0744,0748</code>).
+        </p>
+        <h4>CRS Station Codes</h4>
+        <p>CRS (Computer Reservation System) station codes are available from the following endpoint:</p>
+        <p><code><a href="/crs">/crs/{query}</a></code></p>
+        <p>
+            If <code>query</code> is omitted then all CRS codes are returned along with their respective station names. 
+            <br />
+            If <code>query</code> is provided then only station names matching it will be returned along with their CRS codes.
+        </p>
+        <p>Example response for<code>/crs/oswald</code>:</p>
+        <pre>
+[
+  {
+    "stationName": "Church & Oswaldtwistle",
+    "crsCode": "CTW"
+  },
+  {
+    "stationName": "Lazonby & Kirkoswald",
+    "crsCode": "LZB"
+  }
+]
+</pre>
+        <p><code><a href="/crs/london terminals">/crs/london terminals</a></code> returns all codes in the <a href="https://en.wikipedia.org/wiki/London_station_group">London station group</a>.</p>
+        <pre>
+[
+  {
+    "stationName": "London Blackfriars",
+    "crsCode": "BFR"
+  },
+  {
+    "stationName": "London Cannon Street",
+    "crsCode": "CST"
+  },
+  {
+    "stationName": "London Charing Cross",
+    "crsCode": "CHX"
+  },
+  {
+    "stationName": "City Thameslink",
+    "crsCode": "CTX"
+  },
+  {
+    "stationName": "London Euston",
+    "crsCode": "EUS"
+  },
+  {
+    "stationName": "London Fenchurch Street",
+    "crsCode": "FST"
+  },
+  {
+    "stationName": "London Kings Cross",
+    "crsCode": "KGX"
+  },
+  {
+    "stationName": "London Liverpool Street",
+    "crsCode": "LST"
+  },
+  {
+    "stationName": "London Bridge",
+    "crsCode": "LBG"
+  },
+  {
+    "stationName": "London Marylebone",
+    "crsCode": "MYB"
+  },
+  {
+    "stationName": "Moorgate",
+    "crsCode": "MOG"
+  },
+  {
+    "stationName": "Old Street",
+    "crsCode": "OLD"
+  },
+  {
+    "stationName": "London Paddington",
+    "crsCode": "PAD"
+  },
+  {
+    "stationName": "London St Pancras International",
+    "crsCode": "STP"
+  },
+  {
+    "stationName": "Vauxhall",
+    "crsCode": "VXH"
+  },
+  {
+    "stationName": "London Victoria",
+    "crsCode": "VIC"
+  },
+  {
+    "stationName": "London Waterloo",
+    "crsCode": "WAT"
+  },
+  {
+    "stationName": "London Waterloo East",
+    "crsCode": "WAE"
+  }
+]
+</pre>
+        <h3>Service</h3>
+        <p><code><a href="/service/Z/zlpIG8jJacKayAnOXODw==?accessToken=">/service/[Service ID]?accessToken=[Your GUID token]</a></code></p>
+        <p>
+            The service ID can be found for each service inside the departures and arrivals response.
+        </p>
+        <p>
+            This endpoint also accepts the <a href="/service/8c105350-4235-44f3-b076-87fe829c577e?accessToken=">GUID representation of the ID</a> as <code>/</code>, <code>+</code> and case sensitivity can cause trouble if you're not careful.
+        </p>
+        <h2>Source Code</h2>
+        <p>All the <a href="https://github.com/jpsingleton/Huxley">source code is available on GitHub</a>.</p>
+        <p>
+            <a href="https://ci.appveyor.com/project/jpsingleton/huxley">
+                <image src="https://ci.appveyor.com/api/projects/status/github/jpsingleton/huxley?svg=true" width="256" />
+            </a>
+        </p>
+        <h2>SDKs</h2>
+        <p>
+            Client library SDKs in 9 languages (including Java and Ruby) for this endpoint (generated with <a href="https://github.com/swagger-api/swagger-codegen">Swagger</a>) are available <a href="http://restunited.com/releases/430721415517308710/wrappers">here</a>.
+            <br />
+            If you use these make sure to change the endpoint for production.
+        </p>
+        <hr />
+        <p>Made by <a href="https://unop.uk">James Singleton</a></p>
+        <p>
+            <img src="NRE_Powered_logo.png" alt="powered by National Rail Enquiries" width="256" />
+        </p>
+        <hr />
+        <p>&copy; 2015 <a href="https://github.com/jpsingleton">James Singleton</a></p>
+        <p>
+            This program is licensed under the terms of the GNU Affero General Public License. 
+            This means that you need to share any changes (even if only running on a public server).
+        </p>
+        <p>
+            If you would like another license (such as a commercial license with an invoice) then this can be provided. 
+            Please get in touch (send an email to jpsingleton at gmail dot com).
+        </p>
+        <p>
+            Contains public sector information licensed under the Open Government Licence v3.0.
+        </p>
+    </div>
+</body>
+</html>
